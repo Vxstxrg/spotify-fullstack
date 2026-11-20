@@ -2,7 +2,7 @@
 
 import { useActions } from '@/hooks/useActions';
 import { ITrack } from '@/types/track';
-import { Delete, MusicNote, Pause, PlayArrow } from '@mui/icons-material';
+import { Delete, MusicNote, Pause, PlayArrow, PlaylistRemove } from '@mui/icons-material';
 import { Card, IconButton, Grid, Box } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import React from 'react';
@@ -11,6 +11,8 @@ import { serverAsset } from '@/const/api';
 
 interface TrackItemProps {
 	track: ITrack;
+	// передаётся со страницы альбома — «убрать трек из альбома»
+	onRemove?: () => void;
 }
 
 const formatTime = (seconds: number) => {
@@ -19,12 +21,15 @@ const formatTime = (seconds: number) => {
 	return `${mins}:${String(secs).padStart(2, '0')}`;
 }
 
-const TrackItem: React.FC<TrackItemProps> = ({ track }) => {
+const TrackItem: React.FC<TrackItemProps> = ({ track, onRemove }) => {
 	const router = useRouter();
 	const { active, pause, currentTime, duration } = useTypedSelector(state => state.player)
+	const { user, isAuth } = useTypedSelector(state => state.auth)
 	const { playTrack, pauseTrack, setActiveTrack, deleteTrack } = useActions();
 
 	const isCurrent = active?._id === track._id;
+	// удалять трек может его автор или администратор
+	const canDelete = isAuth && !!user && (user.role === 'admin' || track.user === user._id);
 
 	const play = (e: React.MouseEvent) => {
 		e.stopPropagation()
@@ -111,12 +116,26 @@ const TrackItem: React.FC<TrackItemProps> = ({ track }) => {
 					</Grid>
 				)}
 
-				{/* Удаление */}
-				<Grid sx={{ flexShrink: 0 }}>
-					<IconButton onClick={remove}>
-						<Delete />
-					</IconButton>
-				</Grid>
+				{/* Убрать из альбома */}
+				{onRemove && (
+					<Grid sx={{ flexShrink: 0 }}>
+						<IconButton onClick={(e) => {
+							e.stopPropagation();
+							onRemove();
+						}} title="Убрать из альбома">
+							<PlaylistRemove />
+						</IconButton>
+					</Grid>
+				)}
+
+				{/* Удаление — только автору или админу */}
+				{canDelete && (
+					<Grid sx={{ flexShrink: 0 }}>
+						<IconButton onClick={remove}>
+							<Delete />
+						</IconButton>
+					</Grid>
+				)}
 			</Grid>
 		</Card>
 	);

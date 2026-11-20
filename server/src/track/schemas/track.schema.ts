@@ -28,7 +28,7 @@ export class Track {
 
 	// альбом, к которому относится трек (может отсутствовать); mongoose приводит строку к ObjectId
 	@Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Album' })
-	album?: string;
+	album?: string | null;
 
 	// пользователь, загрузивший трек (для проверки прав на удаление)
 	@Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })

@@ -6,11 +6,17 @@ import { useRouter } from 'next/navigation';
 import { IAlbum } from '@/types/track';
 import { api, apiError } from '@/lib/api';
 import { serverAsset } from '@/const/api';
+import { useTypedSelector } from '@/hooks/useTypedSelector';
 
 const AlbumsPage = () => {
 	const router = useRouter();
+	const { isAuth, user } = useTypedSelector(state => state.auth);
 	const [albums, setAlbums] = useState<IAlbum[]>([]);
 	const [error, setError] = useState('');
+
+	// удалять альбом может его автор или администратор
+	const canDelete = (album: IAlbum) =>
+		isAuth && !!user && (user.role === 'admin' || album.user === user._id);
 
 	const loadAlbums = async () => {
 		try {
@@ -130,9 +136,11 @@ const AlbumsPage = () => {
 											{album.artist}
 										</div>
 									</Box>
-									<IconButton onClick={(e) => remove(e, album._id)}>
-										<Delete />
-									</IconButton>
+									{canDelete(album) && (
+										<IconButton onClick={(e) => remove(e, album._id)}>
+											<Delete />
+										</IconButton>
+									)}
 								</Box>
 							))
 						)}

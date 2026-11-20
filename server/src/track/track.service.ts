@@ -77,7 +77,7 @@ export class TrackService {
 		if (!track) {
 			throw new NotFoundException(`Трек с id ${id} не найден`);
 		}
-		assertCanDelete(track.user, requestUser, 'трека');
+		assertCanModify(track.user, requestUser, 'удаление трека');
 
 		// убираем за треком загруженные файлы
 		if (track.picture) this.fileService.removeFile(track.picture);
@@ -110,11 +110,11 @@ export class TrackService {
 	}
 }
 
-// удалять контент может его автор или администратор
-export function assertCanDelete(ownerId: unknown, requestUser: RequestUser, what: string) {
+// изменять/удалять контент может его автор или администратор
+export function assertCanModify(ownerId: unknown, requestUser: RequestUser, action: string) {
 	if (requestUser.role === 'admin') return;
 	const isOwner = ownerId && ownerId.toString() === requestUser.userId;
 	if (!isOwner) {
-		throw new ForbiddenException(`У вас нет прав на удаление этого ${what}`);
+		throw new ForbiddenException(`Недостаточно прав: ${action} доступно только автору или администратору`);
 	}
 }

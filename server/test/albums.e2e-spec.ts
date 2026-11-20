@@ -82,6 +82,38 @@ describe('Albums (e2e)', () => {
 		expect(res.status).toBe(403);
 	});
 
+	it('добавляет и убирает трек в альбоме (только владелец/админ)', async () => {
+		const created = await request(testApp.http)
+			.post('/tracks')
+			.set('Authorization', `Bearer ${ownerToken}`)
+			.field('name', 'Standalone Track')
+			.field('artist', 'E2E Artist');
+		expect(created.status).toBe(201);
+		const freeTrackId = created.body._id;
+
+		// чужой пользователь не может менять состав альбома
+		const forbidden = await request(testApp.http)
+			.post(`/albums/${albumId}/tracks/${freeTrackId}`)
+			.set('Authorization', `Bearer ${otherToken}`);
+		expect(forbidden.status).toBe(403);
+
+		const res = await request(testApp.http)
+			.post(`/albums/${albumId}/tracks/${freeTrackId}`)
+			.set('Authorization', `Bearer ${ownerToken}`);
+		expect(res.status).toBe(201);
+		expect(res.body.tracks.map((t: any) => t.name)).toContain('Standalone Track');
+
+		// убираем трек из альбома — привязка снимается, трек остаётся
+		const removed = await request(testApp.http)
+			.delete(`/albums/${albumId}/tracks/${freeTrackId}`)
+			.set('Authorization', `Bearer ${ownerToken}`);
+		expect(removed.status).toBe(200);
+		expect(removed.body.tracks.map((t: any) => t.name)).not.toContain('Standalone Track');
+
+		const track = await request(testApp.http).get(`/tracks/${freeTrackId}`);
+		expect(track.body.album).toBeNull();
+	});
+
 	it('отвязывает треки при удалении альбома владельцем', async () => {
 		const res = await request(testApp.http)
 			.delete(`/albums/${albumId}`)

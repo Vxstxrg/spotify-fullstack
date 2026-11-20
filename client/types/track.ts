@@ -14,6 +14,8 @@ export interface ITrack {
 	picture: string;
 	audio: string;
 	album?: string | null;
+	// автор загрузки (id пользователя) — для проверки прав в UI
+	user?: string | null;
 	comments: IComment[]
 }
 

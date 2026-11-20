@@ -28,6 +28,18 @@ export class AlbumController {
 		return this.albumService.getOne(id);
 	}
 
+	@Post(':id/tracks/:trackId')
+	@Auth()
+	addTrack(@Param('id') id: mongoose.ObjectId, @Param('trackId') trackId: mongoose.ObjectId, @Req() req: Request) {
+		return this.albumService.addTrack(id, trackId, req.user!);
+	}
+
+	@Delete(':id/tracks/:trackId')
+	@Auth()
+	removeTrack(@Param('id') id: mongoose.ObjectId, @Param('trackId') trackId: mongoose.ObjectId, @Req() req: Request) {
+		return this.albumService.removeTrack(id, trackId, req.user!);
+	}
+
 	@Delete(':id')
 	@Auth()
 	delete(@Param('id') id: mongoose.ObjectId, @Req() req: Request) {
