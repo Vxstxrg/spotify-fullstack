@@ -1,0 +1,37 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+
+  server:
+    build: ./server
+    restart: unless-stopped
+    environment:
+      PORT: 5000
+      MONGODB_URI: mongodb://mongo:27017/spotify
+      # обязательно поменяйте при деплое
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+    ports:
+      - "5000:5000"
+    volumes:
+      - server_static:/app/static
+    depends_on:
+      - mongo
+
+  client:
+    build:
+      context: ./client
+      args:
+        # как клиенту (из браузера) обратиться к API
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5000}
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+
+volumes:
+  mongo_data:
+  server_static:

@@ -1,0 +1,7 @@
+/* Ваш глобальный файл .css */
+
+/* 1. Объявляем точный порядок слоёв: MUI ниже, утилиты Tailwind выше */
+@layer theme, base, mui, components, utilities;
+
+/* 2. Импортируем Tailwind v4 */
+@import "tailwindcss";
