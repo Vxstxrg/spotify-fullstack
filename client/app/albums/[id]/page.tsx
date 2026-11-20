@@ -1,6 +1,6 @@
 'use client'
 import React, { useEffect, useState, Suspense } from 'react';
-import { Button, Grid, Box, Alert, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Button, Grid, Box, Alert, Autocomplete, TextField } from '@mui/material';
 import { MusicNote as MusicNoteIcon } from '@mui/icons-material';
 import { useParams, useRouter } from 'next/navigation';
 import { IAlbum, ITrack } from '@/types/track';
@@ -16,7 +16,7 @@ const AlbumPage = () => {
 	const { isAuth, user } = useTypedSelector(state => state.auth);
 	const [album, setAlbum] = useState<IAlbum | null>(null);
 	const [allTracks, setAllTracks] = useState<ITrack[]>([]);
-	const [addTrackId, setAddTrackId] = useState('');
+	const [selectedTrack, setSelectedTrack] = useState<ITrack | null>(null);
 	const [error, setError] = useState('');
 
 	// управлять составом альбома может его автор или администратор
@@ -48,15 +48,15 @@ const AlbumPage = () => {
 	}, [canManage]);
 
 	const addTrack = async () => {
-		if (!addTrackId) return;
-		const res = await api(`/albums/${id}/tracks/${addTrackId}`, { method: 'POST' });
+		if (!selectedTrack) return;
+		const res = await api(`/albums/${id}/tracks/${selectedTrack._id}`, { method: 'POST' });
 		if (!res.ok) {
 			setError(await apiError(res));
 			return;
 		}
 		setError('');
 		setAlbum(await res.json());
-		setAddTrackId('');
+		setSelectedTrack(null);
 	}
 
 	const removeTrack = async (track: ITrack) => {
@@ -141,24 +141,58 @@ const AlbumPage = () => {
 			<h1>Треки альбома</h1>
 			{canManage && (
 				<Grid container sx={{ alignItems: 'center', gap: 2, mb: 2 }}>
-					<FormControl sx={{ minWidth: 300 }} size="small">
-						<InputLabel id="add-track-label">Добавить трек в альбом</InputLabel>
-						<Select
-							labelId="add-track-label"
-							value={addTrackId}
-							label="Добавить трек в альбом"
-							onChange={(e) => setAddTrackId(e.target.value)}
-						>
-							<MenuItem value=""><em>Выберите трек</em></MenuItem>
-							{freeTracks.map(t => (
-								<MenuItem key={t._id} value={t._id}>{t.name} — {t.artist}</MenuItem>
-							))}
-						</Select>
-					</FormControl>
+					<Autocomplete
+						sx={{ minWidth: 420, flex: 1, maxWidth: 600 }}
+						options={freeTracks}
+						value={selectedTrack}
+						onChange={(e, value) => setSelectedTrack(value)}
+						getOptionLabel={(t) => `${t.name} — ${t.artist}`}
+						isOptionEqualToValue={(a, b) => a._id === b._id}
+						noOptionsText="Подходящих треков не найдено"
+						renderOption={(props, t) => {
+							const { key, ...optionProps } = props;
+							return (
+								<Box component="li" key={key} {...optionProps} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+									{t.picture ? (
+										<img
+											src={serverAsset(t.picture)}
+											alt=""
+											width={40}
+											height={40}
+											style={{ borderRadius: 4, objectFit: 'cover' }}
+										/>
+									) : (
+										<Box sx={{
+											width: 40,
+											height: 40,
+											display: 'flex',
+											alignItems: 'center',
+											justifyContent: 'center',
+											bgcolor: 'action.selected',
+											borderRadius: 1
+										}}>
+											<MusicNoteIcon fontSize="small" />
+										</Box>
+									)}
+									<Box sx={{ minWidth: 0 }}>
+										<div>{t.name}</div>
+										<div style={{ fontSize: 13, color: 'gray' }}>{t.artist}</div>
+									</Box>
+								</Box>
+							);
+						}}
+						renderInput={(params) => (
+							<TextField
+								{...params}
+								label="Добавить трек в альбом"
+								placeholder="Поиск по названию или исполнителю"
+							/>
+						)}
+					/>
 					<Button
 						variant="contained"
 						onClick={addTrack}
-						disabled={!addTrackId}
+						disabled={!selectedTrack}
 					>
 						Добавить
 					</Button>
